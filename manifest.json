@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "Sefaria Iframe Plugin Launcher",
+  "version": "0.1.0",
+  "description": "Floating panel on Sefaria that loads plugins inside an iframe and exchanges postMessages (sref, etc.).",
+  "action": {
+    "default_title": "Toggle Sefaria Plugin Launcher"
+  },
+  "permissions": [
+    "tabs",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://www.sefaria.org/*",
+    "https://*.sefaria.org/*",
+    "https://www.sefaria.org.il/*",
+    "https://*.sefaria.org.il/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.sefaria.org/*",
+        "https://*.sefaria.org/*",
+        "https://www.sefaria.org.il/*",
+        "https://*.sefaria.org.il/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "styles/panel.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

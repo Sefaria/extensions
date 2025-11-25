@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sefaria Example Plugin</title>
+  <style>
+    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 0; padding: 16px; }
+    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; }
+    .row { display: flex; gap: 12px; align-items: center; }
+    .label { width: 110px; color: #475569; }
+    input, button, textarea {
+      font: inherit; padding: 8px 10px; border: 1px solid #e5e7eb; border-radius: 8px;
+    }
+    button { cursor: pointer; background: #f8fafc; }
+    pre { background: #f1f5f9; padding: 8px; border-radius: 8px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <h1>Sefaria Example Plugin</h1>
+  <div class="card">
+    <div class="row">
+      <div class="label">Latest sref:</div>
+      <input id="sref" type="text" placeholder="waiting..." readonly>
+    </div>
+    <div class="row" style="margin-top:10px;">
+      <button id="ask">Request sref</button>
+      <button id="log">Send log</button>
+    </div>
+  </div>
+
+  <h3 style="margin-top:20px;">Events</h3>
+  <pre id="events"></pre>
+
+  <script>
+    const eventsEl = document.getElementById('events');
+    const srefEl = document.getElementById('sref');
+
+    function logLine(obj) {
+      eventsEl.textContent += (typeof obj === 'string' ? obj : JSON.stringify(obj)) + "\n";
+      eventsEl.scrollTop = eventsEl.scrollHeight;
+    }
+
+    window.addEventListener('message', (ev) => {
+      const data = ev.data;
+      if (!data || typeof data !== 'object') return;
+
+      if (data.type === 'sref:update') {
+        srefEl.value = data.sref || '';
+        logLine({ received: data });
+      } else if (data.type === 'sref:response') {
+        srefEl.value = data.sref || '';
+        logLine({ received: data });
+      }
+    });
+
+    document.getElementById('ask').addEventListener('click', () => {
+      window.parent.postMessage({ type: 'plugin:request-sref' }, '*');
+      logLine('sent plugin:request-sref');
+    });
+
+    document.getElementById('log').addEventListener('click', () => {
+      window.parent.postMessage({ type: 'plugin:log', message: 'Hello from plugin!' }, '*');
+      logLine('sent plugin:log');
+    });
+
+    window.parent.postMessage({ type: 'plugin:ready' }, '*');
+    logLine('sent plugin:ready');
+  </script>
+</body>
+</html>

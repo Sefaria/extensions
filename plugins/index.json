@@ -1,0 +1,20 @@
+[
+    {
+      "name": "Copy Tool",
+      "url": "https://akiva10b.github.io/sefaria-copy/copy.html",
+      "icon": "https://github.com/akiva10b/sefaria-copy/blob/main/sefaria-copy-icon.png?raw=true",
+      "description": "A tool to help copy text from Sefaria"
+    },
+    {
+      "name": "Transliterator",
+      "url": "https://akiva10b.github.io/transliteration-plugin/transliteration.html",
+      "icon": "https://akiva10b.github.io/transliteration-plugin/icon.png",
+      "description": "Track your study progress on Sefaria"
+    },
+    {
+      "name": "Screen Reader",
+      "url": "http://127.0.0.1:5000",
+      "icon": "https://akiva10b.github.io/sefaria-study-tracker/icon.png",
+      "description": "Track your study progress on Sefaria"
+    }
+  ]
