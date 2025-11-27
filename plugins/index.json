@@ -2,7 +2,7 @@
     {
       "name": "Sefaria Librarian",
       "url": "/librarian/plugin.html",
-      "icon": "/librarian/icon.svg",
+      "icon": "/librarian/icon.png",
       "description": "Chat with a librarian and jump to referenced texts"
     },
     {
