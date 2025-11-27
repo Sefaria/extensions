@@ -30,7 +30,7 @@
   const toAbsoluteUrl = (maybeRelative) => {
     if (!maybeRelative) return "";
     try {
-      return new URL(maybeRelative, BASE_URL).toString();
+      return `${BASE_URL}${maybeRelative}`;
     } catch {
       return maybeRelative;
     }
