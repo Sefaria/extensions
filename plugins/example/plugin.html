@@ -27,6 +27,11 @@
       <button id="ask">Request sref</button>
       <button id="log">Send log</button>
     </div>
+    <div class="row" style="margin-top:10px;">
+      <div class="label">Open ref:</div>
+      <input id="openRefInput" type="text" placeholder="e.g. Genesis 1.1" value="Genesis 1.1" style="flex:1;">
+      <button id="openRef">Open</button>
+    </div>
   </div>
 
   <h3 style="margin-top:20px;">Events</h3>
@@ -62,6 +67,14 @@
     document.getElementById('log').addEventListener('click', () => {
       window.parent.postMessage({ type: 'plugin:log', message: 'Hello from plugin!' }, '*');
       logLine('sent plugin:log');
+    });
+
+    const openRefInput = document.getElementById('openRefInput');
+    document.getElementById('openRef').addEventListener('click', () => {
+      const ref = (openRefInput.value || '').trim();
+      if (!ref) return;
+      window.parent.postMessage({ type: 'plugin:open-ref', ref, label: ref }, '*');
+      logLine(`sent plugin:open-ref for ${ref}`);
     });
 
     window.parent.postMessage({ type: 'plugin:ready' }, '*');

@@ -93,7 +93,7 @@
           </div>
           <div id="list" class="list"></div>
           <div id="iframeWrap" class="iframe-wrap" style="display:none">
-              <iframe id="pluginFrame" allow="clipboard-write" sandbox="allow-scripts allow-popups allow-same-origin"></iframe>
+              <iframe id="pluginFrame" allow="clipboard-write" sandbox="allow-scripts allow-popups allow-same-origin allow-forms"></iframe>
           </div>
         </div>
       </div>
@@ -136,6 +136,39 @@
   let backBtn = null;
   let titleEl = null;
   let iframeWrap = null;
+
+  function openRefLink(ref, text) {
+    const cleanRef = (ref || "").trim();
+    if (!cleanRef) return;
+
+    const href = cleanRef.startsWith("/") ? cleanRef : `/${cleanRef}`;
+    const anchor = document.createElement("a");
+    anchor.className = "refLink";
+    anchor.href = href;
+    anchor.dataset.ref = cleanRef.replace(/^\//, "");
+    anchor.textContent = text || cleanRef;
+
+    const textRange = document.getElementsByClassName('rangeSpan');
+    if (textRange.length > 0) {
+      textRange[0].appendChild(anchor);
+      anchor.click();
+      return;
+    }
+    else {
+      // Fallback: navigate directly
+      assignUrl(href);
+    }
+    
+  }
+
+  function assignUrl(nextUrl) {
+      try {
+        const target = new URL(nextUrl, location.href).toString();
+        location.assign(target);
+      } catch (err) {
+        console.error("[Plugin] Invalid navigation URL", err);
+      }
+  }
 
   function openPlugin(plugin) {
     currentPlugin = plugin;
@@ -202,6 +235,15 @@
       } else if (data.direction === "next") {
         scrollUntilUrlChanges("down");
       }
+    } else if (data.type === "plugin:navigate-url") {
+      // Navigate the host page when the plugin requests it
+      const nextUrl = typeof data.url === "string" ? data.url.trim() : "";
+      if (!nextUrl) return;
+      assignUrl(nextUrl);
+    } else if (data.type === "open-ref" || data.type === "plugin:open-ref") {
+      const ref = typeof data.ref === "string" ? data.ref : "";
+      const label = typeof data.label === "string" ? data.label : "";
+      openRefLink(ref, label);
     }
   }
 
