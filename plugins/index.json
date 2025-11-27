@@ -6,6 +6,12 @@
       "description": "Chat with a librarian and jump to referenced texts"
     },
     {
+      "name": "AI Translation",
+      "url": "/translation/plugin.html",
+      "icon": "/translation/icon.svg",
+      "description": "Translate the current ref with AI and retry or confirm"
+    },
+    {
       "name": "Copy Tool",
       "url": "/copy_tool/plugin.html",
       "icon": "/copy_tool/icon.png",
