@@ -8,7 +8,7 @@
     {
       "name": "AI Translation",
       "url": "/translation/plugin.html",
-      "icon": "/translation/icon.svg",
+      "icon": "/translation/icon.png",
       "description": "Translate the current ref with AI and retry or confirm"
     },
     {
