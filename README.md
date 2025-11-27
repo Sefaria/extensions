@@ -44,3 +44,10 @@ Then, load the extension and select **Example Local Plugin** in the panel. The i
 - `plugin:log` — log debug messages to the page console.
 
 This approach is **Chrome Web Store compliant** because the plugin code runs on its own origin in an iframe; the extension does not execute remote code.
+
+## Local Flask Static Server
+A lightweight Flask app in `server.py` serves everything in `plugins/` (including `index.json` and the HTML plugins) as static files at `http://127.0.0.1:5000`.
+
+1. Install Flask (ideally in a virtualenv): `pip install Flask`
+2. Start the server from the repo root: `python server.py`
+3. Visit a plugin directly (e.g., `http://127.0.0.1:5000/screen_reader.html`) or fetch `http://127.0.0.1:5000/index.json` for the plugin list.

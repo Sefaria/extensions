@@ -20,29 +20,43 @@
     }
     doScroll();
   }
-(() => {
+(async () => {
+
   const ROOT_ID = "sefaria-iframe-plugin-root";
 
-  const PLUGINS = [
-    {
-      name: "Copy Tool",
-      url: "https://akiva10b.github.io/sefaria-copy/copy.html",
-      icon: "https://github.com/akiva10b/sefaria-copy/blob/main/sefaria-copy-icon.png?raw=true",
-      description: "A tool to help copy text from Sefaria"
-    },
-    {
-      name: "Transliterater",
-      url: "https://akiva10b.github.io/transliteration-plugin/transliteration.html",
-      icon: "https://akiva10b.github.io/transliteration-plugin/icon.png",
-      description: "Track your study progress on Sefaria"
-    },
-    {
-      name: "Study Tracker",
-      url: "http://127.0.0.1:5000",
-      icon: "https://akiva10b.github.io/sefaria-study-tracker/icon.png",
-      description: "Track your study progress on Sefaria"
+  const BASE_URL = "https://sefaria.github.io/extensions/plugins";
+
+
+  const toAbsoluteUrl = (maybeRelative) => {
+    if (!maybeRelative) return "";
+    try {
+      return new URL(maybeRelative, BASE_URL).toString();
+    } catch {
+      return maybeRelative;
     }
-  ];
+  };
+
+
+  const getPlugins = async () => {
+    try {
+      const resp = await fetch(`${BASE_URL}/index.json`);
+      if (!resp.ok) throw new Error("Failed to fetch plugins");
+      const data = await resp.json();
+      const raw = Array.isArray(data) ? data : (data?.plugins || []);
+      return raw.map((item) => ({
+        ...item,
+        url: toAbsoluteUrl(item.url),
+        icon: toAbsoluteUrl(item.icon)
+      }));
+    } catch (error) {
+      console.error(error);
+      return [];
+    }
+  };
+
+  const PLUGINS = await getPlugins();
+
+  console.log("Loaded plugins:", PLUGINS);
 
   if (document.getElementById(ROOT_ID)) return;
 
