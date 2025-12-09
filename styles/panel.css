@@ -11,6 +11,17 @@
   overflow: hidden;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
 }
+#sefaria-iframe-plugin-root.docked {
+  top: auto;
+  right: auto;
+  width: 500px;
+  max-width: none;
+  box-shadow: none;
+  border-radius: 0;
+  top: 59px;
+  position: relative;
+  height: 100%;
+}
 #sefaria-iframe-plugin-root .panel {
   display: flex;
   flex-direction: column;
@@ -20,6 +31,12 @@
   border: 1px solid #e5e7eb;
   border-radius: 12px;
 }
+#sefaria-iframe-plugin-root.docked .panel {
+  border-radius: 0;
+  height: 100%;
+  border-left: 1px solid #e5e7eb;
+  border-right: 1px solid #e5e7eb;
+}
 .panel .header {
   display: flex;
   align-items: center;
@@ -28,6 +45,11 @@
   background: #5a9ab7;
   color: #fff;
 }
+
+.docked .panel .header {
+  padding: 17px 12px;
+}
+
 .panel .header h1 {
   margin: 0;
   font-size: 14px;
@@ -70,6 +92,11 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+#sefaria-iframe-plugin-root.docked .list,
+#sefaria-iframe-plugin-root.docked .iframe-wrap,
+#sefaria-iframe-plugin-root.docked .search-row input[type="search"] {
+  border-radius: 0;
 }
 .plugin-item {
   display: grid;

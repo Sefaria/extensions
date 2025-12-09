@@ -28,5 +28,11 @@
       "url": "/screen_reader/plugin.html",
       "icon": "/screen_reader/icon.png",
       "description": "Track your study progress on Sefaria"
+    },
+    {
+      "name": "Sofer.ai Shiur Player",
+      "url": "/soferai/plugin.html",
+      "icon": "/soferai/icon.svg",
+      "description": "Play shiur audio, align transcription to Sefaria refs, and auto-follow"
     }
   ]

@@ -24,34 +24,48 @@
 
   const ROOT_ID = "sefaria-iframe-plugin-root";
 
-  const BASE_URL = "https://sefaria.github.io/extensions/plugins";
+  const BASE_URL = "http://127.0.0.1:5000";
+  const EXT_BASE_URL = (typeof chrome !== "undefined" && chrome.runtime?.getURL)
+    ? chrome.runtime.getURL("plugins/")
+    : "";
 
 
-  const toAbsoluteUrl = (maybeRelative) => {
+  const toAbsoluteUrl = (maybeRelative, baseUrl) => {
     if (!maybeRelative) return "";
     try {
-      return `${BASE_URL}${maybeRelative}`;
+      return new URL(maybeRelative, baseUrl).toString();
     } catch {
       return maybeRelative;
     }
   };
 
 
+  const loadPluginIndex = async (baseUrl) => {
+    if (!baseUrl) return null;
+    const resp = await fetch(new URL("index.json", baseUrl), { cache: "no-store" });
+    if (!resp.ok) throw new Error(`Failed to fetch plugins from ${baseUrl}`);
+    const data = await resp.json();
+    const raw = Array.isArray(data) ? data : (data?.plugins || []);
+    return raw.map((item) => ({
+      ...item,
+      url: toAbsoluteUrl(item.url, baseUrl),
+      icon: toAbsoluteUrl(item.icon, baseUrl)
+    }));
+  };
+
+
   const getPlugins = async () => {
-    try {
-      const resp = await fetch(`${BASE_URL}/index.json`);
-      if (!resp.ok) throw new Error("Failed to fetch plugins");
-      const data = await resp.json();
-      const raw = Array.isArray(data) ? data : (data?.plugins || []);
-      return raw.map((item) => ({
-        ...item,
-        url: toAbsoluteUrl(item.url),
-        icon: toAbsoluteUrl(item.icon)
-      }));
-    } catch (error) {
-      console.error(error);
-      return [];
+    // Try local dev server first, then fall back to packaged assets inside the extension.
+    const sources = [BASE_URL, EXT_BASE_URL].filter(Boolean);
+    for (const base of sources) {
+      try {
+        const plugins = await loadPluginIndex(base);
+        if (plugins?.length) return plugins;
+      } catch (error) {
+        console.warn(`[Plugin] Index fetch failed from ${base}`, error);
+      }
     }
+    return [];
   };
 
   const PLUGINS = await getPlugins();
@@ -85,6 +99,7 @@
         <div class="header">
           <button id="backBtn" style="visibility:hidden">← Back</button>
           <h1 id="title">Sefaria Plugins</h1>
+          <button id="dockBtn">Dock</button>
           <button id="closeBtn">Close</button>
         </div>
         <div class="body">
@@ -136,6 +151,13 @@
   let backBtn = null;
   let titleEl = null;
   let iframeWrap = null;
+  let dockBtn = null;
+
+  let isDocked = false;
+  let originalParent = null;
+  let originalNextSibling = null;
+  let panelWrapBox = null;
+  let panelWrapOriginalStyles = null;
 
   function openRefLink(ref, text) {
     const cleanRef = (ref || "").trim();
@@ -319,11 +341,62 @@
   listEl = root.querySelector("#list");
   frameEl = root.querySelector("#pluginFrame");
   iframeWrap = root.querySelector("#iframeWrap");
+  dockBtn = root.querySelector("#dockBtn");
+  originalParent = root.parentElement;
+  originalNextSibling = root.nextSibling;
+
+  function dockPanel() {
+    const readerWrap = document.getElementById("panelWrapBox");
+    if (!readerWrap) {
+      console.warn("Dock requested but #panelWrapBox was not found; keeping floating panel.");
+      return;
+    }
+    panelWrapBox = readerWrap;
+    if (!panelWrapOriginalStyles) {
+      panelWrapOriginalStyles = {
+        width: readerWrap.style.width,
+        left: readerWrap.style.left
+      };
+    }
+
+    document.getElementById("panelWrapBox").style.width = "calc(100% - 500px)";
+    document.getElementById("panelWrapBox").style.left = "0";
+
+    readerWrap.insertAdjacentElement("afterend", root);
+    root.classList.add("docked");
+    root.style.display = "block";
+    dockBtn.textContent = "Float";
+    isDocked = true;
+  }
+
+  function floatPanel() {
+    if (originalParent) {
+      if (originalNextSibling) {
+        originalParent.insertBefore(root, originalNextSibling);
+      } else {
+        originalParent.appendChild(root);
+      }
+    }
+    if (panelWrapBox) {
+      panelWrapBox.style.width = panelWrapOriginalStyles?.width || "100%";
+      panelWrapBox.style.left = panelWrapOriginalStyles?.left || "";
+    }
+    root.classList.remove("docked");
+    dockBtn.textContent = "Dock";
+    isDocked = false;
+  }
 
   renderList(listEl, "");
 
   backBtn.addEventListener("click", backToList);
   closeBtn.addEventListener("click", () => { root.style.display = "none"; });
+  dockBtn.addEventListener("click", () => {
+    if (isDocked) {
+      floatPanel();
+    } else {
+      dockPanel();
+    }
+  });
 
   filterInput.addEventListener("input", (e) => {
     renderList(listEl, e.target.value || "");

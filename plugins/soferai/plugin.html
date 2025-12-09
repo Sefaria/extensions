@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sofer.ai Shiur Player</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #0f172a;
+      --muted: #475569;
+      --line: #e2e8f0;
+      --panel: #ffffff;
+      --bg: radial-gradient(circle at 30% 10%, #dcf4ff 0, rgba(220, 244, 255, 0) 30%), radial-gradient(circle at 80% 0%, #ede9fe 0, rgba(237, 233, 254, 0) 30%), #f8fafc;
+      --accent: #1e3a8a;
+      --accent-2: #2563eb;
+      --accent-soft: #e8edff;
+      --shadow: 0 8px 32px rgba(15, 23, 42, 0.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      display: flex;
+      justify-content: center;
+      padding: 18px;
+    }
+    .shell {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 860px;
+      min-height: 520px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    header {
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      background: linear-gradient(180deg, rgba(37, 99, 235, 0.08) 0%, rgba(248, 250, 252, 0) 70%);
+    }
+    .title { font-weight: 800; letter-spacing: 0.01em; color: var(--accent); font-size: 18px; }
+    .subtitle { color: var(--muted); font-size: 13px; }
+    .content {
+      display: grid;
+      grid-template-columns: 1fr 0.55fr;
+      gap: 14px;
+      padding: 16px 18px 18px;
+      height: 100%;
+    }
+    @media (max-width: 900px) {
+      .content { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
+    }
+    .card h3 {
+      margin: 0;
+      font-size: 15px;
+      color: var(--accent);
+      letter-spacing: 0.01em;
+    }
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 13px;
+      color: #0f172a;
+      font-weight: 600;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      font: inherit;
+      background: #fff;
+    }
+    textarea { resize: vertical; min-height: 80px; }
+    .actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--accent-2);
+      background: linear-gradient(145deg, #2563eb, #1d4ed8);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 700;
+      min-width: 110px;
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.2);
+      transition: transform 140ms ease, box-shadow 140ms ease, opacity 120ms ease;
+    }
+    button:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
+    button:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(37, 99, 235, 0.28); }
+    .status {
+      font-size: 12px;
+      color: var(--muted);
+      padding: 8px 10px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+    .player {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .player .row { display: flex; gap: 10px; align-items: center; }
+    .player button.secondary {
+      background: #fff;
+      color: var(--accent);
+      border-color: var(--line);
+      box-shadow: none;
+    }
+    .player button.secondary:hover { background: #eef2ff; }
+    .range {
+      flex: 1;
+      appearance: none;
+      height: 10px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #2563eb, #7c3aed);
+      outline: none;
+    }
+    .range::-webkit-slider-thumb {
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid #1d4ed8;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    }
+    .range::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid #1d4ed8;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    }
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 8px;
+      font-size: 12px;
+      color: #334155;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #1e3a8a;
+      font-weight: 700;
+      font-size: 12px;
+    }
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 320px;
+      overflow: auto;
+    }
+    .chip-btn {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: #f8fafc;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 13px;
+      cursor: pointer;
+      width: 100%;
+      text-align: left;
+    }
+    .chip-btn strong { color: var(--accent); }
+    .chip-btn:hover { background: #eef2ff; }
+    .row-inline { display: flex; align-items: center; gap: 8px; }
+    .helper {
+      font-size: 12px;
+      color: #475569;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="title">Sofer.ai Shiur Player</div>
+      <div class="subtitle">Transcription + Sefaria follow-along</div>
+    </header>
+    <div class="content">
+      <div class="card">
+        <h3>Inputs</h3>
+        <label>Audio URL
+          <input id="audioUrl" type="url" placeholder="https://…" required>
+        </label>
+        <label>Sofer.ai API Token
+          <input id="apiToken" type="password" placeholder="Bearer token" required>
+        </label>
+        <label>Sofer.ai UID
+          <input id="apiUid" type="text" placeholder="e.g. 328081a4-9dae-4f39-93bc-0cae80675129" required>
+        </label>
+        <label>Sefaria section refs (comma or newline separated)
+          <textarea id="sectionRefs" placeholder="Ex: Zevachim 77a, Zevachim 77b"></textarea>
+        </label>
+        <div class="actions">
+          <button id="startBtn" type="button">Start</button>
+          <label class="row-inline">
+            <input id="followToggle" type="checkbox">
+            <span>Follow me</span>
+          </label>
+        </div>
+        <div class="status" id="status">Idle. Provide inputs and press Start.</div>
+      </div>
+      <div class="card">
+        <h3>Playback</h3>
+        <div class="player">
+          <div class="row">
+            <button id="playBtn" class="secondary" type="button">Play</button>
+            <button id="pauseBtn" class="secondary" type="button">Pause</button>
+            <div class="badge" id="currentRef">No segment yet</div>
+          </div>
+          <div class="row">
+            <span id="timeLabel" style="width: 64px;">0:00</span>
+            <input id="seek" class="range" type="range" min="0" value="0" step="0.1">
+            <span id="durationLabel" style="width: 64px; text-align: right;">0:00</span>
+          </div>
+          <audio id="audio" preload="metadata"></audio>
+          <div class="helper">When "Follow me" is enabled, navigation will jump to the current section ref as the audio progresses.</div>
+        </div>
+        <div class="meta">
+          <div>Title: <strong id="metaTitle">—</strong></div>
+          <div>Duration: <strong id="metaDuration">—</strong></div>
+          <div>Language: <strong id="metaLang">—</strong></div>
+          <div>Speakers: <strong id="metaSpeakers">—</strong></div>
+        </div>
+        <div class="list" id="segmentsList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./transcriber.js"></script>
+  <script src="./script.js"></script>
+</body>
+</html>
