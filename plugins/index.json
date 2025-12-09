@@ -46,5 +46,11 @@
       "url": "/image_generator/plugin.html",
       "icon": "/image_generator/icon.svg",
       "description": "Generate an educational image for the current Sefaria ref"
+    },
+    {
+      "name": "Talmudic Comic Strip",
+      "url": "/comic_strip/plugin.html",
+      "icon": "/comic_strip/icon.svg",
+      "description": "Turn a sugya into a three-panel illustrated debate"
     }
   ]
