@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Memorable Image Generator</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #0f172a;
+      --muted: #475569;
+      --line: #e2e8f0;
+      --panel: #ffffff;
+      --bg: #f8fafc;
+      --accent: #1f3b57;
+      --accent-2: #2563eb;
+      --accent-soft: #eef2ff;
+    }
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+    .card {
+      width: 100%;
+      max-width: 720px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 8px 28px rgba(15, 23, 42, 0.1);
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    header {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: 0.01em;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .ref-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: var(--accent-soft);
+      border: 1px solid #dbe3f9;
+      color: var(--accent);
+      font-weight: 600;
+      width: fit-content;
+    }
+    .status {
+      font-size: 13px;
+      color: var(--muted);
+      min-height: 18px;
+    }
+    .status.error {
+      color: #b91c1c;
+    }
+    .image-wrap {
+      min-height: 280px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      position: relative;
+    }
+    .image-wrap img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--accent-2);
+      background: linear-gradient(145deg, #2563eb, #1d4ed8);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 700;
+      transition: opacity 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.2);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    button:not(:disabled):hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.25);
+    }
+    .style-input {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #cbd5e1;
+      font: inherit;
+      background: #fff;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <header>
+      <div class="title">Memorable Image</div>
+      <div class="subtitle">Turn the current Sefaria ref into an educational illustration.</div>
+    </header>
+    <div id="refBadge" class="ref-pill" style="display:none;"></div>
+    <div id="status" class="status">Waiting for a reference…</div>
+    <div class="actions">
+      <input id="styleInput" class="style-input" type="text" placeholder="Style (optional, e.g. watercolor, comic strip)" />
+      <button id="generateBtn" type="button" disabled>Generate</button>
+    </div>
+    <section id="imageWrap" class="image-wrap">
+      <div id="placeholder">No image yet.</div>
+      <img id="resultImg" alt="Generated educational illustration" style="display:none;" />
+    </section>
+  </main>
+
+  <script>
+    const statusEl = document.getElementById('status');
+    const refBadgeEl = document.getElementById('refBadge');
+    const imageWrap = document.getElementById('imageWrap');
+    const resultImg = document.getElementById('resultImg');
+    const placeholder = document.getElementById('placeholder');
+    const generateBtn = document.getElementById('generateBtn');
+    const styleInput = document.getElementById('styleInput');
+    const textParams = new URLSearchParams({
+      context: '0',
+      stripItags: '1',
+      fallbackOnDefaultVersion: '1'
+    });
+
+    const htmlStripper = document.createElement('div');
+
+    let currentRef = '';
+    let loading = false;
+
+    function setStatus(text, type = '') {
+      statusEl.textContent = text;
+      statusEl.className = 'status' + (type ? ' ' + type : '');
+    }
+
+    function setButtonsEnabled(enabled) {
+      generateBtn.disabled = !enabled;
+    }
+
+    function updateRef(ref) {
+      currentRef = (ref || '').trim();
+      if (!currentRef) {
+        refBadgeEl.style.display = 'none';
+        resultImg.style.display = 'none';
+        placeholder.style.display = 'block';
+        placeholder.textContent = 'No image yet.';
+        setStatus('Waiting for a reference…');
+        setButtonsEnabled(false);
+        return;
+      }
+      refBadgeEl.style.display = 'inline-flex';
+      refBadgeEl.textContent = currentRef.replace(/_/g, ' ');
+      setStatus('Ready to generate an image.');
+      setButtonsEnabled(!loading);
+    }
+
+    function stripHtml(raw) {
+      if (raw == null) return '';
+      if (typeof raw !== 'string') return stripHtml(String(raw));
+      htmlStripper.innerHTML = raw;
+      const text = htmlStripper.textContent || htmlStripper.innerText || '';
+      htmlStripper.textContent = '';
+      return text.trim();
+    }
+
+    function flattenText(value) {
+      if (!value) return '';
+      if (Array.isArray(value)) return value.map(flattenText).filter(Boolean).join('\\n').trim();
+      if (typeof value === 'object') {
+        if ('text' in value) return flattenText(value.text);
+        if ('he' in value) return flattenText(value.he);
+        if ('content' in value) return flattenText(value.content);
+        return '';
+      }
+      return stripHtml(value);
+    }
+
+    async function fetchSourceText(ref) {
+      const url = `https://www.sefaria.org/api/texts/${encodeURIComponent(ref)}?${textParams.toString()}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Sefaria API error (${response.status})`);
+      const data = await response.json();
+      if (data && data.error) throw new Error(data.error);
+      const text = flattenText(data?.text) || flattenText(data?.he);
+      if (!text) throw new Error('No text available for this reference.');
+      return text;
+    }
+
+    async function generateImage() {
+      if (!currentRef || loading) return;
+      loading = true;
+      setButtonsEnabled(false);
+      setStatus('Fetching source text…');
+      placeholder.style.display = 'block';
+      resultImg.style.display = 'none';
+      placeholder.textContent = 'Working on it…';
+
+      try {
+        const sourceText = await fetchSourceText(currentRef);
+        setStatus('Generating image…');
+
+        const resp = await fetch('https://plugin-ai.sefaria.org/api/generate-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: sourceText,
+            reference: currentRef,
+            style: (styleInput.value || '').trim() || 'educational illustration'
+          })
+        });
+
+        if (!resp.ok) throw new Error(`Server error (${resp.status})`);
+        const data = await resp.json();
+        const imgUrl = data?.image_url || data?.url || data?.image;
+        if (!imgUrl) throw new Error('No image returned by the server.');
+
+        resultImg.src = imgUrl;
+        resultImg.style.display = 'block';
+        placeholder.style.display = 'none';
+        setStatus('Image ready.');
+      } catch (err) {
+        console.error(err);
+        placeholder.style.display = 'block';
+        placeholder.textContent = 'Unable to generate an image.';
+        resultImg.style.display = 'none';
+        setStatus(err.message || 'Failed to generate image.', 'error');
+      } finally {
+        loading = false;
+        setButtonsEnabled(Boolean(currentRef));
+      }
+    }
+
+    generateBtn.addEventListener('click', generateImage);
+
+    window.addEventListener('message', (event) => {
+      const data = event.data;
+      if (!data || typeof data !== 'object') return;
+      if (data.type === 'sref:update' || data.type === 'sref:response') {
+        updateRef(data.sref || '');
+      }
+    });
+
+    window.parent.postMessage({ type: 'plugin:ready' }, '*');
+  </script>
+</body>
+</html>

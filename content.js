@@ -158,6 +158,39 @@
   let originalNextSibling = null;
   let panelWrapBox = null;
   let panelWrapOriginalStyles = null;
+  const FLOATING_CLASS = "floating-centered";
+
+  function updateFloatingPosition() {
+    if (!root) return;
+    const panelWrap = document.getElementById("panelWrapBox");
+    const rect = panelWrap ? panelWrap.getBoundingClientRect() : null;
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 1200;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 800;
+
+    const targetWidth = rect ? Math.min(Math.max(rect.width * 0.9, 520), 960) : Math.min(Math.max(viewportWidth * 0.9, 520), 960);
+    const targetHeight = rect ? Math.min(Math.max(rect.height * 0.45, 280), 560) : Math.min(Math.max(viewportHeight * 0.6, 320), 560);
+    const centerLeft = rect ? rect.left + (rect.width / 2) : viewportWidth / 2;
+    const bottomMargin = 24;
+    const topOffset = rect
+      ? Math.max(12, rect.bottom - targetHeight - bottomMargin)
+      : Math.max(12, viewportHeight - targetHeight - bottomMargin);
+
+    root.style.setProperty("--floating-left", `${centerLeft}px`);
+    root.style.setProperty("--floating-top", `${topOffset}px`);
+    root.style.setProperty("--floating-width", `${targetWidth}px`);
+    root.style.setProperty("--floating-height", `${targetHeight}px`);
+  }
+
+  function enableFloatingPositioning() {
+    if (!root || isDocked) return;
+    root.classList.add(FLOATING_CLASS);
+    updateFloatingPosition();
+  }
+
+  function disableFloatingPositioning() {
+    if (!root) return;
+    root.classList.remove(FLOATING_CLASS);
+  }
 
   function openRefLink(ref, text) {
     const cleanRef = (ref || "").trim();
@@ -344,6 +377,12 @@
   dockBtn = root.querySelector("#dockBtn");
   originalParent = root.parentElement;
   originalNextSibling = root.nextSibling;
+  enableFloatingPositioning();
+
+  window.addEventListener("resize", updateFloatingPosition, { passive: true });
+  window.addEventListener("scroll", () => {
+    if (!isDocked) updateFloatingPosition();
+  }, { passive: true });
 
   function dockPanel() {
     const readerWrap = document.getElementById("panelWrapBox");
@@ -351,6 +390,7 @@
       console.warn("Dock requested but #panelWrapBox was not found; keeping floating panel.");
       return;
     }
+    disableFloatingPositioning();
     panelWrapBox = readerWrap;
     if (!panelWrapOriginalStyles) {
       panelWrapOriginalStyles = {
@@ -384,6 +424,15 @@
     root.classList.remove("docked");
     dockBtn.textContent = "Dock";
     isDocked = false;
+    enableFloatingPositioning();
+  }
+
+  function showFloatingPanel() {
+    if (!isDocked) {
+      enableFloatingPositioning();
+    }
+    updateFloatingPosition();
+    root.style.display = "block";
   }
 
   renderList(listEl, "");
@@ -404,7 +453,13 @@
 
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg?.type === "SEFARIA_IFRAME_LAUNCHER_TOGGLE") {
-      root.style.display = (root.style.display === "none" || !root.style.display) ? "block" : "none";
+      const shouldShow = root.style.display === "none" || !root.style.display;
+      if (shouldShow) {
+        backToList();
+        showFloatingPanel();
+      } else {
+        root.style.display = "none";
+      }
     }
   });
 

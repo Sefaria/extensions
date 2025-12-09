@@ -1,5 +1,11 @@
 [
     {
+      "name": "Mishna Scholar",
+      "url": "/mishna_scholar/plugin.html",
+      "icon": "/mishna_scholar/icon.png",
+      "description": "Guiding teacher throughout mishna"
+    },
+    {
       "name": "Sefaria Librarian",
       "url": "/librarian/plugin.html",
       "icon": "/librarian/icon.png",
@@ -34,5 +40,11 @@
       "url": "/soferai/plugin.html",
       "icon": "/soferai/icon.svg",
       "description": "Play shiur audio, align transcription to Sefaria refs, and auto-follow"
+    },
+    {
+      "name": "Memorable Image",
+      "url": "/image_generator/plugin.html",
+      "icon": "/image_generator/icon.svg",
+      "description": "Generate an educational image for the current Sefaria ref"
     }
   ]
