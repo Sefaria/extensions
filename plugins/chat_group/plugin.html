@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Study Circle Chat</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #0f172a;
+      --muted: #475569;
+      --line: #e2e8f0;
+      --panel: #ffffff;
+      --bg: radial-gradient(circle at 20% 20%, #e0f2fe 0, rgba(224, 242, 254, 0) 32%), #f8fafc;
+      --accent: #0f4c81;
+      --accent-soft: #e0f2fe;
+      --success: #0f9d58;
+      --error: #b91c1c;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      display: flex;
+      justify-content: center;
+      padding: 22px;
+    }
+    .card {
+      width: 100%;
+      max-width: 860px;
+      background: var(--panel);
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      box-shadow: 0 18px 38px rgba(15, 23, 42, 0.12);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      padding: 20px 22px 24px;
+      min-height: 540px;
+    }
+    header {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .title {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .ref-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 600;
+      border: 1px solid rgba(15, 76, 129, 0.2);
+      width: fit-content;
+    }
+    .status {
+      font-size: 14px;
+      color: var(--muted);
+      min-height: 20px;
+    }
+    .status.error {
+      color: var(--error);
+    }
+    .status.ready {
+      color: var(--success);
+    }
+    .conversation-shell {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #f9fbff;
+      display: flex;
+      flex-direction: column;
+      min-height: 320px;
+      overflow: hidden;
+    }
+    .conversation {
+      flex: 1 1 auto;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+    }
+    .msg {
+      display: flex;
+      gap: 10px;
+      max-width: 92%;
+    }
+    .msg + .msg {
+      margin-top: 2px;
+    }
+    .avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: linear-gradient(145deg, #172554, #1d4ed8);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      flex-shrink: 0;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.2);
+    }
+    .bubble {
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      padding: 12px 14px;
+      line-height: 1.5;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+      flex: 1 1 auto;
+    }
+    .speaker {
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+    .message {
+      color: var(--ink);
+      white-space: pre-wrap;
+    }
+    .meta {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+    .summary-panel,
+    .insights-panel {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 16px;
+      background: #fff;
+    }
+    .panel-title {
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .insights-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 0;
+      padding-left: 18px;
+    }
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      color: #fff;
+      background: linear-gradient(135deg, #2563eb, #0f4c81);
+      box-shadow: 0 10px 26px rgba(37, 99, 235, 0.25);
+      transition: transform 140ms ease, box-shadow 140ms ease, opacity 140ms ease;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    button:not(:disabled):hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 32px rgba(37, 99, 235, 0.3);
+    }
+    .empty-state {
+      margin: auto;
+      text-align: center;
+      color: var(--muted);
+      padding: 30px 18px;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <header>
+      <div class="title">Study Circle Chat</div>
+      <div class="subtitle">Watch a multi-voice recap of the current passage.</div>
+    </header>
+    <div id="refBadge" class="ref-pill" style="display:none;"></div>
+    <div id="status" class="status">Waiting for a reference…</div>
+
+    <section class="conversation-shell">
+      <div id="conversation" class="conversation">
+        <div class="empty-state">Once we have a reference, we’ll invite a few study partners to discuss it.</div>
+      </div>
+    </section>
+
+    <section class="summary-panel" id="summaryPanel" style="display:none;">
+      <div class="panel-title">Conversation takeaway</div>
+      <p id="summaryText" class="message"></p>
+    </section>
+
+    <section class="insights-panel" id="insightsPanel" style="display:none;">
+      <div class="panel-title">Key insights</div>
+      <ul id="insightsList" class="insights-list"></ul>
+    </section>
+
+    <div class="actions">
+      <button id="regenerateBtn" type="button" disabled>Regenerate conversation</button>
+    </div>
+  </main>
+
+  <script>
+    const statusEl = document.getElementById('status');
+    const refBadgeEl = document.getElementById('refBadge');
+    const conversationEl = document.getElementById('conversation');
+    const summaryPanel = document.getElementById('summaryPanel');
+    const summaryText = document.getElementById('summaryText');
+    const insightsPanel = document.getElementById('insightsPanel');
+    const insightsList = document.getElementById('insightsList');
+    const regenerateBtn = document.getElementById('regenerateBtn');
+
+    const textParams = new URLSearchParams({
+      context: '0',
+      stripItags: '1',
+      fallbackOnDefaultVersion: '1'
+    });
+
+    const htmlStripper = document.createElement('div');
+    const colorPalette = [
+      '#2563eb', '#f97316', '#0ea5e9', '#10b981',
+      '#7c3aed', '#db2777', '#059669', '#9333ea'
+    ];
+
+    const state = {
+      currentRef: '',
+      sourceText: '',
+      loading: false,
+      lastRequestToken: 0
+    };
+
+    function setStatus(text, type = '') {
+      statusEl.textContent = text;
+      statusEl.className = 'status' + (type ? ' ' + type : '');
+    }
+
+    function stripHtml(raw) {
+      if (raw == null) return '';
+      if (typeof raw !== 'string') return stripHtml(String(raw));
+      htmlStripper.innerHTML = raw;
+      const text = htmlStripper.textContent || htmlStripper.innerText || '';
+      htmlStripper.textContent = '';
+      return text.trim();
+    }
+
+    function flattenText(value) {
+      if (!value) return '';
+      if (Array.isArray(value)) {
+        return value.map(flattenText).filter(Boolean).join('\n').trim();
+      }
+      if (typeof value === 'object') {
+        if ('text' in value) return flattenText(value.text);
+        if ('he' in value) return flattenText(value.he);
+        if ('content' in value) return flattenText(value.content);
+        return '';
+      }
+      return stripHtml(value);
+    }
+
+    function truncateText(text, maxChars = 4000) {
+      if (!text) return '';
+      if (text.length <= maxChars) return text;
+      return `${text.slice(0, maxChars - 1).trim()}…`;
+    }
+
+    function resetConversationUI() {
+      conversationEl.innerHTML = '<div class="empty-state">Gathering voices from the beit midrash…</div>';
+      summaryPanel.style.display = 'none';
+      insightsPanel.style.display = 'none';
+      insightsList.innerHTML = '';
+      summaryText.textContent = '';
+    }
+
+    function renderConversation(conversation = []) {
+      conversationEl.innerHTML = '';
+      if (!conversation.length) {
+        conversationEl.innerHTML = '<div class="empty-state">The study circle stayed quiet. Try regenerating.</div>';
+        return;
+      }
+
+      const colorMap = new Map();
+      let paletteIndex = 0;
+
+      conversation.forEach((entry, idx) => {
+        if (!entry) return;
+        const speaker = entry.speaker || entry.name || `Voice ${idx + 1}`;
+        const message = entry.message || entry.text || entry.content || '';
+        const tone = entry.tone || entry.role || '';
+
+        if (!colorMap.has(speaker)) {
+          colorMap.set(speaker, colorPalette[paletteIndex % colorPalette.length]);
+          paletteIndex += 1;
+        }
+
+        const msgEl = document.createElement('article');
+        msgEl.className = 'msg';
+
+        const avatar = document.createElement('div');
+        avatar.className = 'avatar';
+        avatar.textContent = (speaker || '?').split(/\s+/).map(part => part[0]).join('').slice(0, 2).toUpperCase();
+        avatar.style.background = colorMap.get(speaker);
+
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+
+        const speakerEl = document.createElement('div');
+        speakerEl.className = 'speaker';
+        speakerEl.textContent = speaker;
+
+        const messageEl = document.createElement('div');
+        messageEl.className = 'message';
+        messageEl.textContent = message || '…';
+
+        bubble.appendChild(speakerEl);
+        bubble.appendChild(messageEl);
+
+        if (tone) {
+          const meta = document.createElement('div');
+          meta.className = 'meta';
+          meta.textContent = tone;
+          bubble.appendChild(meta);
+        }
+
+        msgEl.appendChild(avatar);
+        msgEl.appendChild(bubble);
+        conversationEl.appendChild(msgEl);
+      });
+    }
+
+    function renderSummary(summary = '') {
+      if (!summary) {
+        summaryPanel.style.display = 'none';
+        summaryText.textContent = '';
+        return;
+      }
+      summaryPanel.style.display = 'block';
+      summaryText.textContent = summary;
+    }
+
+    function renderInsights(insights = []) {
+      if (!Array.isArray(insights) || !insights.length) {
+        insightsPanel.style.display = 'none';
+        insightsList.innerHTML = '';
+        return;
+      }
+      insightsPanel.style.display = 'block';
+      insightsList.innerHTML = '';
+      insights.forEach((insight) => {
+        if (!insight) return;
+        const li = document.createElement('li');
+        li.textContent = typeof insight === 'string' ? insight : (insight.text || insight.summary || '');
+        insightsList.appendChild(li);
+      });
+    }
+
+    async function fetchSourceText(ref) {
+      if (!ref) throw new Error('No reference provided.');
+      const url = `https://www.sefaria.org/api/texts/${encodeURIComponent(ref)}?${textParams.toString()}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Sefaria API error (${response.status})`);
+      const data = await response.json();
+      if (data && data.error) throw new Error(data.error);
+      const text = flattenText(data?.text) || flattenText(data?.he);
+      if (!text) throw new Error('No text available for this reference.');
+      return text;
+    }
+
+    async function requestConversation(reference, text) {
+      const payload = {
+        reference,
+        text,
+        format: 'chat_group',
+        instructions: 'Stage a short, respectful multi-voice discussion that helps readers grasp the main ideas.'
+      };
+
+      const response = await fetch('https://plugin-ai.sefaria.org/api/chat-group-conversation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) throw new Error(`Server error (${response.status})`);
+      const data = await response.json();
+      if (!data) throw new Error('Empty response from conversation endpoint.');
+      return data;
+    }
+
+    function normalizeConversationPayload(data) {
+      if (!data) return { conversation: [], summary: '', insights: [] };
+      const conversation = Array.isArray(data.conversation)
+        ? data.conversation
+        : Array.isArray(data.messages)
+          ? data.messages
+          : Array.isArray(data.dialogue)
+            ? data.dialogue
+            : [];
+
+      const resultSummary = data.summary || data.takeaway || data.overview || '';
+      const insights = Array.isArray(data.insights)
+        ? data.insights
+        : Array.isArray(data.key_points)
+          ? data.key_points
+          : [];
+
+      if (!conversation.length && resultSummary) {
+        return {
+          conversation: [{ speaker: 'Narrator', message: resultSummary }],
+          summary: '',
+          insights
+        };
+      }
+
+      return {
+        conversation,
+        summary: resultSummary,
+        insights
+      };
+    }
+
+    async function buildConversation({ reloadText = false } = {}) {
+      if (!state.currentRef) return;
+      state.loading = true;
+      regenerateBtn.disabled = true;
+      const requestToken = ++state.lastRequestToken;
+      resetConversationUI();
+      setStatus('Fetching passage…');
+
+      try {
+        if (!state.sourceText || reloadText) {
+          state.sourceText = await fetchSourceText(state.currentRef);
+        }
+
+        setStatus('Asking the chat group to discuss…');
+        const conversationData = await requestConversation(
+          state.currentRef,
+          truncateText(state.sourceText, 4000)
+        );
+        if (requestToken !== state.lastRequestToken) return;
+
+        const { conversation, summary, insights } = normalizeConversationPayload(conversationData);
+        renderConversation(conversation);
+        renderSummary(summary);
+        renderInsights(insights);
+        setStatus('Conversation ready', 'ready');
+      } catch (err) {
+        console.error(err);
+        conversationEl.innerHTML = `<div class="empty-state">${err.message || 'Unable to load conversation.'}</div>`;
+        setStatus(err.message || 'Failed to build conversation.', 'error');
+      } finally {
+        if (requestToken === state.lastRequestToken) {
+          state.loading = false;
+          regenerateBtn.disabled = !state.currentRef;
+        }
+      }
+    }
+
+    function updateRef(ref) {
+      const nextRef = (ref || '').trim();
+      state.currentRef = nextRef;
+      state.sourceText = '';
+      if (!nextRef) {
+        refBadgeEl.style.display = 'none';
+        resetConversationUI();
+        setStatus('Waiting for a reference…');
+        regenerateBtn.disabled = true;
+        return;
+      }
+      refBadgeEl.style.display = 'inline-flex';
+      refBadgeEl.textContent = nextRef.replace(/_/g, ' ');
+      buildConversation({ reloadText: true });
+    }
+
+    regenerateBtn.addEventListener('click', () => {
+      if (!state.currentRef || state.loading) return;
+      buildConversation({ reloadText: false });
+    });
+
+    window.addEventListener('message', (event) => {
+      const data = event.data;
+      if (!data || typeof data !== 'object') return;
+      if (data.type === 'sref:update' || data.type === 'sref:response') {
+        updateRef(data.sref || '');
+      }
+    });
+
+    window.parent.postMessage({ type: 'plugin:ready' }, '*');
+  </script>
+</body>
+</html>
