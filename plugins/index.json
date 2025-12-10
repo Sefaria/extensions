@@ -12,6 +12,12 @@
       "description": "Chat with a librarian and jump to referenced texts"
     },
     {
+      "name": "Study Circle Chat",
+      "url": "/chat_group/plugin.html",
+      "icon": "/chat_group/icon.svg",
+      "description": "See a chat-group discussion of the current reference"
+    },
+    {
       "name": "AI Translation",
       "url": "/translation/plugin.html",
       "icon": "/translation/icon.png",
